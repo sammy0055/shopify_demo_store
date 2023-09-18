@@ -1,7 +1,7 @@
 import {Link, useLoaderData} from '@remix-run/react';
 import {json} from '@shopify/remix-oxygen';
 import {CartForm} from '@shopify/hydrogen';
-import {CartLineItems} from '~/components/Cart';
+import {CartActions, CartLineItems, CartSummary} from '~/components/Cart';
 
 export async function loader({context}: LoaderProps) {
   const {cart} = context;
@@ -47,7 +47,8 @@ export default function Cart() {
           <CartLineItems linesObj={cart.lines} />
         </div>
         <div className="fixed left-0 right-0 bottom-0 md:sticky md:top-[65px] grid gap-6 p-4 md:px-6 md:translate-y-4 bg-gray-100 rounded-md w-full">
-          <p>TODO Cart Summary</p>
+          <CartSummary cost={cart.cost} />
+          <CartActions checkoutUrl={cart.checkoutUrl} />
         </div>
       </div>
     );

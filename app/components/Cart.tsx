@@ -1,5 +1,5 @@
 import {Link, useFetcher} from '@remix-run/react';
-import { CartForm } from '@shopify/hydrogen';
+import {CartForm} from '@shopify/hydrogen';
 import {flattenConnection, Image, Money} from '@shopify/hydrogen-react';
 
 export function CartLineItems({linesObj}: any) {
@@ -7,7 +7,13 @@ export function CartLineItems({linesObj}: any) {
   return (
     <div className="space-y-8">
       {lines.map((line: any) => {
-        return <LineItem key={line.id} lineItem={line} />;
+        return (
+          <>
+            <div>
+              <LineItem key={line.id} lineItem={line} />
+            </div>
+          </>
+        );
       })}
     </div>
   );
@@ -32,7 +38,11 @@ function LineItem({lineItem}: any) {
           {merchandise.product.title}
         </Link>
         <div className="text-gray-800 text-sm">{merchandise.title}</div>
-        <div className="text-gray-800 text-sm">Qty: {quantity}</div>
+        <div className="text-gray-800 text-sm">
+          {' '}
+          <CartLineQuantity line={lineItem} />
+        </div>
+
         <ItemRemoveButton lineIds={[lineItem.id]} />
       </div>
       <Money data={lineItem.cost.totalAmount} />
@@ -40,14 +50,68 @@ function LineItem({lineItem}: any) {
   );
 }
 
-function ItemRemoveButton({lineIds}:any) {
+function CartLineQuantity({line}: {line: any}) {
+  if (!line || typeof line?.quantity === 'undefined') return null;
+  const {id: lineId, quantity} = line;
+  const prevQuantity = Number(Math.max(0, quantity - 1).toFixed(0));
+  const nextQuantity = Number((quantity + 1).toFixed(0));
+
+  return (
+    <div className="cart-line-quantiy">
+      <small className="text-gray-800 text-sm">
+        Qty: {quantity} &nbsp;&nbsp;
+      </small>
+      <div className='flex-1'>
+        <CartLineUpdateButton lines={[{id: lineId, quantity: prevQuantity}]}>
+          <button
+            aria-label="Decrease quantity"
+            disabled={quantity <= 1}
+            name="decrease-quantity"
+            value={prevQuantity}
+          >
+            <span>&#8722; </span>
+          </button>
+        </CartLineUpdateButton>
+        &nbsp;
+        <CartLineUpdateButton lines={[{id: lineId, quantity: nextQuantity}]}>
+          <button
+            aria-label="Increase quantity"
+            name="increase-quantity"
+            value={nextQuantity}
+          >
+            <span>&#43;</span>
+          </button>
+        </CartLineUpdateButton>
+      </div>
+      &nbsp;
+    </div>
+  );
+}
+
+function CartLineUpdateButton({
+  children,
+  lines,
+}: {
+  children: React.ReactNode;
+  lines: any; // CartLineUpdateInput[];
+}) {
+  return (
+    <CartForm
+      route="/cart"
+      action={CartForm.ACTIONS.LinesUpdate}
+      inputs={{lines}}
+    >
+      {children}
+    </CartForm>
+  );
+}
+
+function ItemRemoveButton({lineIds}: any) {
   return (
     <CartForm
       route="/cart"
       action={CartForm.ACTIONS.LinesRemove}
-      inputs={
-        {lineIds}
-      }
+      inputs={{lineIds}}
     >
       <button
         className="bg-white border-black text-black hover:text-white hover:bg-black rounded-md font-small text-center my-2 max-w-xl leading-none border w-10 h-10 flex items-center justify-center"
@@ -90,3 +154,42 @@ function IconRemove() {
   );
 }
 
+export function CartSummary({cost}: any) {
+  return (
+    <>
+      <dl className="space-y-2">
+        <div className="flex items-center justify-between">
+          <dt>Subtotal</dt>
+          <dd>
+            {cost?.subtotalAmount?.amount ? (
+              <Money data={cost?.subtotalAmount} />
+            ) : (
+              '-'
+            )}
+          </dd>
+        </div>
+        <div className="flex items-center justify-between">
+          <dt className="flex items-center">
+            <span>Shipping estimate</span>
+          </dt>
+          <dd className="text-green-600">Free and carbon neutral</dd>
+        </div>
+      </dl>
+    </>
+  );
+}
+
+export function CartActions({checkoutUrl}: any) {
+  if (!checkoutUrl) return null;
+
+  return (
+    <div className="flex flex-col mt-2">
+      <a
+        href={checkoutUrl}
+        className="bg-black text-white px-6 py-3 w-full rounded-md text-center font-medium"
+      >
+        Continue to Checkout
+      </a>
+    </div>
+  );
+}
